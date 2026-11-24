@@ -12,39 +12,26 @@ only finishes when that token is released.
 
 Quarkus HTTP servers built on Vert.x 4 keep h2c enabled by default, so they are affected the same way.
 
-## One folder per Vert.x version
+## Layout
 
-Each folder holds the same small HTTP server, built against a different Vert.x version. There is one folder for each of
-the agent's `vertx-core` instrumentation modules:
+`vertx-4.5.7/` holds a small HTTP server built against Vert.x 4.5.7. The agent instruments Vert.x 4.5.1 and later with
+its `vertx-core-4.5.1` module. The server accepts `-Dh2c=false` to turn h2c off for comparison.
 
-| Folder         | Vert.x | Agent module       | Leaks a token? | `-Dh2c=false` available |
-|----------------|--------|--------------------|----------------|-------------------------|
-| `vertx-4.0.3`  | 4.0.3  | `vertx-core-4.0.0` | yes            | no                      |
-| `vertx-4.2.5`  | 4.2.5  | `vertx-core-4.1.0` | yes            | no                      |
-| `vertx-4.4.9`  | 4.4.9  | `vertx-core-4.3.2` | yes            | no                      |
-| `vertx-4.5.0`  | 4.5.0  | `vertx-core-4.5.0` | yes            | no                      |
-| `vertx-4.5.7`  | 4.5.7  | `vertx-core-4.5.1` | yes            | yes                     |
-| `vertx-5.0.12` | 5.0.12 | `vertx-core-5.0.0` | no (control)   | yes                     |
-
-Vert.x added `HttpServerOptions#setHttp2ClearTextEnabled` in 4.5.1, so older versions always have h2c on.
+Older Vert.x 4 versions, which the agent's `vertx-core-4.0.0` to `vertx-core-4.5.0` modules instrument, behave the same
+way.
 
 ## Requirements
 
 - JDK 11 or later, Maven 3.6.3 or later, and `nc` (netcat).
-- The New Relic Java agent:
-  - 8.8.0 or later for Vert.x 4.0 to 4.4;
-  - 8.9.0 or later for Vert.x 4.5;
-  - a release with Vert.x 5 support for `vertx-5.0.12` (9.5.0 has it).
+- The New Relic Java agent, 8.9.0 or later.
 
 ## Steps
 
-1. Build every folder. Each one produces `<folder>/target/repro.jar`:
+1. Build the server. This produces `vertx-4.5.7/target/repro.jar`:
 
    ```bash
    mvn package
    ```
-
-   To build a single folder, for example `vertx-4.5.7`: `mvn -pl vertx-4.5.7 -am package`.
 
 2. Download the agent into this directory (unzipping creates `newrelic/`) and set your license key:
 
@@ -54,7 +41,7 @@ Vert.x added `HttpServerOptions#setHttp2ClearTextEnabled` in 4.5.1, so older ver
    export NEW_RELIC_LICENSE_KEY=<your license key>
    ```
 
-3. Start one folder's server with the agent. The flags shorten `token_timeout` to 15 s and log token activity:
+3. Start the server with the agent. The flags shorten `token_timeout` to 15 s and log token activity:
 
    ```bash
    java -javaagent:newrelic/newrelic.jar \
@@ -93,16 +80,11 @@ Vert.x added `HttpServerOptions#setHttp2ClearTextEnabled` in 4.5.1, so older ver
    isn't logged at exactly 15 s, because the agent notices timed-out tokens on a periodic check, or when the connection
    closes.
 
-To try another version, stop the server and repeat steps 3 to 5 with that folder's jar. The agent log keeps growing
-across runs, so look at its newest lines.
-
 ## Compare
 
-- `vertx-5.0.12`: no `Timing out token` line. The `finished` line appears right after the request.
-- `vertx-4.5.7` or `vertx-5.0.12` with `-Dh2c=false` placed before `-jar`: the server prints
-  `Listening on port 8080 with h2c disabled`. There is no `Timing out token` line, and the `finished` line appears right
-  after the request.
-- Any folder, with the request sent with `Connection: close`:
+- With `-Dh2c=false` placed before `-jar`: the server prints `Listening on port 8080 with h2c disabled`. There is no
+  `Timing out token` line, and the `finished` line appears right after the request.
+- With the request sent with `Connection: close`:
 
   ```bash
   (printf 'GET / HTTP/1.1\r\nHost: localhost\r\nConnection: close\r\n\r\n'; sleep 30) | nc localhost 8080
@@ -113,5 +95,5 @@ across runs, so look at its newest lines.
 
 ## Notes
 
-- Tested on Java 21 with agent 9.5.0 (every folder) and agent 8.23.0 (`vertx-4.2.5` and `vertx-4.5.7`).
+- Tested on Java 21 with agents 9.5.0 and 8.23.0.
 - `-Dport=<port>`, placed before `-jar`, changes the port (default 8080).
