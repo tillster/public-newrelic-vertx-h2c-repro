@@ -1,6 +1,6 @@
 # public-newrelic-vertx-h2c-repro
 
-Minimal reproduction for [newrelic/newrelic-java-agent#NNNN](https://github.com/newrelic/newrelic-java-agent/issues/NNNN).
+Minimal reproduction for [newrelic/newrelic-java-agent#3227](https://github.com/newrelic/newrelic-java-agent/issues/3227).
 
 On a Vert.x 4 HTTP server with HTTP/2 cleartext (h2c) enabled, which is the Vert.x default, the New Relic Java agent
 keeps the transaction for the first request on each keep-alive connection open. It stays open until the connection
