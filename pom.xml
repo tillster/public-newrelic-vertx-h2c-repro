@@ -9,7 +9,7 @@
     <version>1.0</version>
     <packaging>pom</packaging>
     <name>Vert.x h2c token repro</name>
-    <description>Minimal Vert.x HTTP servers that reproduce a New Relic Java agent transaction held open by h2c connection setup</description>
+    <description>Minimal Vert.x and Quarkus HTTP servers that reproduce a New Relic Java agent transaction held open by h2c connection setup</description>
 
     <modules>
         <module>vertx-4.0.3</module>
@@ -18,6 +18,7 @@
         <module>vertx-4.5.0</module>
         <module>vertx-4.5.7</module>
         <module>vertx-5.0.12</module>
+        <module>quarkus-3.8.6</module>
     </modules>
 
     <properties>
